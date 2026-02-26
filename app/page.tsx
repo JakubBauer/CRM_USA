@@ -7,6 +7,8 @@ type Role = "ADMIN" | "SALES";
 type UserRow = { id: string; name: string; role: Role; phone: string };
 type User = { id: string; name: string; role: Role };
 
+type Tab = "crm" | "calc";
+
 type LeadStatus =
   | "Kontakt"
   | "Oferty wysłane"
@@ -84,10 +86,7 @@ function normalizePhone(p?: string) {
   return (p ?? "").replace(/\D/g, "");
 }
 
-/**
- * Dedupe po telefonie (cyfry). Jeśli brak telefonu -> name|role.
- * Sort: najpierw po numerze (jeśli jest), potem po imieniu.
- */
+/** Dedupe po telefonie (cyfry). Jeśli brak telefonu -> name|role. */
 function dedupeAndSortUsers(list: UserRow[]) {
   const map = new Map<string, UserRow>();
 
@@ -98,7 +97,6 @@ function dedupeAndSortUsers(list: UserRow[]) {
   }
 
   const arr = Array.from(map.values());
-
   arr.sort((a, b) => {
     const ap = normalizePhone(a.phone);
     const bp = normalizePhone(b.phone);
@@ -400,8 +398,7 @@ function Login({ onLogin }: { onLogin: (u: User) => void }) {
 }
 
 export default function Page() {
-  type Tab = "crm" | "calc";
-const [activeTab, setActiveTab] = useState<Tab>("crm");
+  const [activeTab, setActiveTab] = useState<Tab>("crm");
   const [user, setUser] = useState<User | null>(null);
 
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -409,12 +406,12 @@ const [activeTab, setActiveTab] = useState<Tab>("crm");
   const [saving, setSaving] = useState(false);
 
   const [users, setUsers] = useState<UserRow[]>([]);
-  const uniqueUsers = useMemo(() => dedupeAndSortUsers(users), [users]); // dedupe tylko tutaj
+  const uniqueUsers = useMemo(() => dedupeAndSortUsers(users), [users]);
 
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<LeadStatus | "Wszystkie">("Wszystkie");
   const [sort, setSort] = useState<"newest" | "oldest" | "name">("newest");
-  const [followupactiveTab, setFollowupactiveTab] = useState<"all" | "today" | "overdue">("all");
+  const [followupFilter, setFollowupFilter] = useState<"all" | "today" | "overdue">("all");
 
   const [ownerFilter, setOwnerFilter] = useState<string>("Wszyscy");
 
@@ -501,7 +498,7 @@ const [activeTab, setActiveTab] = useState<Tab>("crm");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, user?.role]);
 
-  // users z Supabase (tylko ADMIN) — BEZ dodatkowego dedupe tutaj (robi memo wyżej)
+  // users z Supabase (tylko ADMIN)
   useEffect(() => {
     if (!user) return;
 
@@ -519,7 +516,7 @@ const [activeTab, setActiveTab] = useState<Tab>("crm");
       .catch(() => setUsers([]));
   }, [user]);
 
-  // fill form on edit (UWAGA: żadnych key= na wrapperach formularza)
+  // fill form on edit (bez key= na wrapperach)
   useEffect(() => {
     if (!user) return;
     if (!editing) return;
@@ -556,7 +553,6 @@ const [activeTab, setActiveTab] = useState<Tab>("crm");
       ownerId: user.id,
       checklist: {},
     });
-    // focus TYLKO przy resecie — nie w żadnym miejscu, które odpala się przy onChange
     setTimeout(() => nameRef.current?.focus(), 0);
   }
 
@@ -767,7 +763,7 @@ const [activeTab, setActiveTab] = useState<Tab>("crm");
       list = list.filter((l) => (l.ownerId || "") === ownerFilter);
     }
 
-    if (followupactiveTab !== "all") {
+    if (followupFilter !== "all") {
       const now = Date.now();
       const sod = startOfDay(now);
       const eod = endOfDay(now);
@@ -775,7 +771,7 @@ const [activeTab, setActiveTab] = useState<Tab>("crm");
       list = list.filter((l) => {
         const due = l.lastContactAt;
         if (!due) return false;
-        if (followupactiveTab === "today") return due >= sod && due <= eod;
+        if (followupFilter === "today") return due >= sod && due <= eod;
         return due < sod;
       });
     }
@@ -793,19 +789,13 @@ const [activeTab, setActiveTab] = useState<Tab>("crm");
     if (sort === "name") list.sort((a, b) => a.name.localeCompare(b.name, "pl"));
 
     return list;
-  }, [leads, query, statusFilter, sort, ownerFilter, user?.role, followupactiveTab]);
+  }, [leads, query, statusFilter, sort, ownerFilter, user?.role, followupFilter]);
 
   const stats = useMemo(() => {
-    const byStatus = STATUSES.reduce((acc, s) => {
-      acc[s] = 0;
-      return acc;
-    }, {} as Record<LeadStatus, number>);
-
     let sumBudget = 0;
     let budgetCount = 0;
 
     for (const l of leads) {
-      byStatus[l.status] = (byStatus[l.status] || 0) + 1;
       if (l.budgetPln != null) {
         sumBudget += l.budgetPln;
         budgetCount++;
@@ -813,18 +803,12 @@ const [activeTab, setActiveTab] = useState<Tab>("crm");
     }
 
     const avgBudget = budgetCount ? Math.round(sumBudget / budgetCount) : undefined;
-    return { total: leads.length, byStatus, avgBudget };
+    return { total: leads.length, avgBudget };
   }, [leads]);
 
   // --- RENDER ---
   if (!user) {
-    return (
-      <Login
-        onLogin={(u) => {
-          setUser(u);
-        }}
-      />
-    );
+    return <Login onLogin={(u) => setUser(u)} />;
   }
 
   if (activeTab === "calc") {
@@ -835,7 +819,7 @@ const [activeTab, setActiveTab] = useState<Tab>("crm");
             <div>
               <h1 style={styles.title}>Kalkulator importu</h1>
               <p style={styles.subtitle}>
-                Zalogowany: <b>{user?.name}</b> ({user?.role})
+                Zalogowany: <b>{user.name}</b> ({user.role})
               </p>
             </div>
 
@@ -887,20 +871,12 @@ const [activeTab, setActiveTab] = useState<Tab>("crm");
               </button>
 
               <button
-  type="button"
-  style={{ ...styles.btn, fontWeight: activeTab === "crm" ? 800 : 600 }}
-  onClick={() => setActiveTab("crm")}
->
-  CRM
-</button>
-
-<button
-  type="button"
-  style={{ ...styles.btn, fontWeight: activeTab === "calc" ? 800 : 600 }}
-  onClick={() => setActiveTab("calc")}
->
-  Kalkulator
-</button>
+                type="button"
+                style={{ ...styles.btn, fontWeight: activeTab === "calc" ? 800 : 600 }}
+                onClick={() => setActiveTab("calc")}
+              >
+                Kalkulator
+              </button>
             </div>
 
             <button style={styles.btn} onClick={reload} disabled={loading || saving} type="button">
@@ -915,7 +891,7 @@ const [activeTab, setActiveTab] = useState<Tab>("crm");
         <div style={{ ...styles.card, padding: 0 }}>
           <div style={styles.grid}>
             {/* LEFT */}
-            {/* UWAGA: NIE MA TU ŻADNEGO key= — to usuwa problem “1 litera i fokus znika” */}
+            {/* UWAGA: brak key= na wrapperach formularza => brak remount => nie zrywa fokusu */}
             <div style={{ ...styles.panel, borderRight: "1px solid #e5e7eb" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
                 <div>
@@ -1166,10 +1142,10 @@ const [activeTab, setActiveTab] = useState<Tab>("crm");
                   <button
                     style={{
                       ...styles.btnSm,
-                      background: followupactiveTab === "all" ? "#e5e7eb" : "#f9fafb",
-                      fontWeight: followupactiveTab === "all" ? 800 : 600,
+                      background: followupFilter === "all" ? "#e5e7eb" : "#f9fafb",
+                      fontWeight: followupFilter === "all" ? 800 : 600,
                     }}
-                    onClick={() => setFollowupactiveTab("all")}
+                    onClick={() => setFollowupFilter("all")}
                     type="button"
                   >
                     Wszystkie
@@ -1177,10 +1153,10 @@ const [activeTab, setActiveTab] = useState<Tab>("crm");
                   <button
                     style={{
                       ...styles.btnSm,
-                      background: followupactiveTab === "today" ? "#e5e7eb" : "#f9fafb",
-                      fontWeight: followupactiveTab === "today" ? 800 : 600,
+                      background: followupFilter === "today" ? "#e5e7eb" : "#f9fafb",
+                      fontWeight: followupFilter === "today" ? 800 : 600,
                     }}
-                    onClick={() => setFollowupactiveTab("today")}
+                    onClick={() => setFollowupFilter("today")}
                     type="button"
                   >
                     Dzisiaj
@@ -1188,11 +1164,11 @@ const [activeTab, setActiveTab] = useState<Tab>("crm");
                   <button
                     style={{
                       ...styles.btnSm,
-                      background: followupactiveTab === "overdue" ? "#fee2e2" : "#f9fafb",
-                      borderColor: followupactiveTab === "overdue" ? "#fecaca" : "#e5e7eb",
-                      fontWeight: followupactiveTab === "overdue" ? 800 : 600,
+                      background: followupFilter === "overdue" ? "#fee2e2" : "#f9fafb",
+                      borderColor: followupFilter === "overdue" ? "#fecaca" : "#e5e7eb",
+                      fontWeight: followupFilter === "overdue" ? 800 : 600,
                     }}
-                    onClick={() => setFollowupactiveTab("overdue")}
+                    onClick={() => setFollowupFilter("overdue")}
                     type="button"
                   >
                     Zaległe
@@ -1217,7 +1193,11 @@ const [activeTab, setActiveTab] = useState<Tab>("crm");
                   </select>
                 )}
 
-                <select style={{ ...styles.select, width: 150 }} value={sort} onChange={(e) => setSort(e.target.value as any)}>
+                <select
+                  style={{ ...styles.select, width: 150 }}
+                  value={sort}
+                  onChange={(e) => setSort(e.target.value as any)}
+                >
                   <option value="newest">Najnowsze</option>
                   <option value="oldest">Najstarsze</option>
                   <option value="name">A→Z</option>
