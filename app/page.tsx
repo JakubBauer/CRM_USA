@@ -1,5 +1,3 @@
-const __VERCEL_TEST__ = DOES_NOT_EXIST;
-
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
@@ -401,6 +399,8 @@ function Login({ onLogin }: { onLogin: (u: User) => void }) {
 
 export default function Page() {
   const [activeTab, setActiveTab] = useState<Tab>("crm");
+  const isCalc = activeTab === "calc";
+  const isCrm = !isCalc;
   const [user, setUser] = useState<User | null>(null);
 
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -813,7 +813,7 @@ export default function Page() {
     return <Login onLogin={(u) => setUser(u)} />;
   }
 
-  if (activeTab === "calc") {
+  if (isCalc) {
     return (
       <div style={styles.wrap}>
         <div style={styles.container}>
@@ -866,7 +866,7 @@ export default function Page() {
             <div style={{ display: "flex", gap: 8 }}>
               <button
                 type="button"
-                style={{ ...styles.btn, fontWeight: activeTab === "crm" ? 800 : 600 }}
+                style={{ ...styles.btn, fontWeight: isCrm ? 800 : 600 }}
                 onClick={() => setActiveTab("crm")}
               >
                 CRM
@@ -874,7 +874,7 @@ export default function Page() {
 
               <button
                 type="button"
-                style={{ ...styles.btn, fontWeight: activeTab === "calc" ? 800 : 600 }}
+                style={{ ...styles.btn, fontWeight: isCalc ? 800 : 600 }}
                 onClick={() => setActiveTab("calc")}
               >
                 Kalkulator
