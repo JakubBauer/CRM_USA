@@ -400,7 +400,7 @@ function Login({ onLogin }: { onLogin: (u: User) => void }) {
 }
 
 export default function Page() {
-  const [view, setView] = useState<"crm" | "calc">("crm");
+  const [activeTab, setactiveTab] = useState<"crm" | "calc">("crm");
   const [user, setUser] = useState<User | null>(null);
 
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -413,7 +413,7 @@ export default function Page() {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<LeadStatus | "Wszystkie">("Wszystkie");
   const [sort, setSort] = useState<"newest" | "oldest" | "name">("newest");
-  const [followupView, setFollowupView] = useState<"all" | "today" | "overdue">("all");
+  const [followupactiveTab, setFollowupactiveTab] = useState<"all" | "today" | "overdue">("all");
 
   const [ownerFilter, setOwnerFilter] = useState<string>("Wszyscy");
 
@@ -766,7 +766,7 @@ export default function Page() {
       list = list.filter((l) => (l.ownerId || "") === ownerFilter);
     }
 
-    if (followupView !== "all") {
+    if (followupactiveTab !== "all") {
       const now = Date.now();
       const sod = startOfDay(now);
       const eod = endOfDay(now);
@@ -774,7 +774,7 @@ export default function Page() {
       list = list.filter((l) => {
         const due = l.lastContactAt;
         if (!due) return false;
-        if (followupView === "today") return due >= sod && due <= eod;
+        if (followupactiveTab === "today") return due >= sod && due <= eod;
         return due < sod;
       });
     }
@@ -792,7 +792,7 @@ export default function Page() {
     if (sort === "name") list.sort((a, b) => a.name.localeCompare(b.name, "pl"));
 
     return list;
-  }, [leads, query, statusFilter, sort, ownerFilter, user?.role, followupView]);
+  }, [leads, query, statusFilter, sort, ownerFilter, user?.role, followupactiveTab]);
 
   const stats = useMemo(() => {
     const byStatus = STATUSES.reduce((acc, s) => {
@@ -826,7 +826,7 @@ export default function Page() {
     );
   }
 
-  if (view === "calc") {
+  if (activeTab === "calc") {
     return (
       <div style={styles.wrap}>
         <div style={styles.container}>
@@ -839,7 +839,7 @@ export default function Page() {
             </div>
 
             <div style={{ display: "flex", gap: 10 }}>
-              <button style={styles.btn} type="button" onClick={() => setView("crm")}>
+              <button style={styles.btn} type="button" onClick={() => setactiveTab("crm")}>
                 ← Wróć do CRM
               </button>
 
@@ -879,16 +879,16 @@ export default function Page() {
             <div style={{ display: "flex", gap: 8 }}>
               <button
                 type="button"
-                style={{ ...styles.btn, fontWeight: view === "crm" ? 800 : 600 }}
-                onClick={() => setView("crm")}
+                style={{ ...styles.btn, fontWeight: activeTab === "crm" ? 800 : 600 }}
+                onClick={() => setactiveTab("crm")}
               >
                 CRM
               </button>
 
               <button
                 type="button"
-                style={{ ...styles.btn, fontWeight: view === "calc" ? 800 : 600 }}
-                onClick={() => setView("calc")}
+                style={{ ...styles.btn, fontWeight: activeTab === "calc" ? 800 : 600 }}
+                onClick={() => setactiveTab("calc")}
               >
                 Kalkulator
               </button>
@@ -1157,10 +1157,10 @@ export default function Page() {
                   <button
                     style={{
                       ...styles.btnSm,
-                      background: followupView === "all" ? "#e5e7eb" : "#f9fafb",
-                      fontWeight: followupView === "all" ? 800 : 600,
+                      background: followupactiveTab === "all" ? "#e5e7eb" : "#f9fafb",
+                      fontWeight: followupactiveTab === "all" ? 800 : 600,
                     }}
-                    onClick={() => setFollowupView("all")}
+                    onClick={() => setFollowupactiveTab("all")}
                     type="button"
                   >
                     Wszystkie
@@ -1168,10 +1168,10 @@ export default function Page() {
                   <button
                     style={{
                       ...styles.btnSm,
-                      background: followupView === "today" ? "#e5e7eb" : "#f9fafb",
-                      fontWeight: followupView === "today" ? 800 : 600,
+                      background: followupactiveTab === "today" ? "#e5e7eb" : "#f9fafb",
+                      fontWeight: followupactiveTab === "today" ? 800 : 600,
                     }}
-                    onClick={() => setFollowupView("today")}
+                    onClick={() => setFollowupactiveTab("today")}
                     type="button"
                   >
                     Dzisiaj
@@ -1179,11 +1179,11 @@ export default function Page() {
                   <button
                     style={{
                       ...styles.btnSm,
-                      background: followupView === "overdue" ? "#fee2e2" : "#f9fafb",
-                      borderColor: followupView === "overdue" ? "#fecaca" : "#e5e7eb",
-                      fontWeight: followupView === "overdue" ? 800 : 600,
+                      background: followupactiveTab === "overdue" ? "#fee2e2" : "#f9fafb",
+                      borderColor: followupactiveTab === "overdue" ? "#fecaca" : "#e5e7eb",
+                      fontWeight: followupactiveTab === "overdue" ? 800 : 600,
                     }}
-                    onClick={() => setFollowupView("overdue")}
+                    onClick={() => setFollowupactiveTab("overdue")}
                     type="button"
                   >
                     Zaległe
