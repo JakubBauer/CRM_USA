@@ -1,3 +1,5 @@
+const __VERCEL_TEST__ = DOES_NOT_EXIST;
+
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
