@@ -400,7 +400,7 @@ function Login({ onLogin }: { onLogin: (u: User) => void }) {
 }
 
 export default function Page() {
-  const [activeTab, setactiveTab] = useState<"crm" | "calc">("crm");
+  const [activeTab, setActiveTab] = useState<"crm" | "calc">("crm");
   const [user, setUser] = useState<User | null>(null);
 
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -839,7 +839,7 @@ export default function Page() {
             </div>
 
             <div style={{ display: "flex", gap: 10 }}>
-              <button style={styles.btn} type="button" onClick={() => setactiveTab("crm")}>
+              <button style={styles.btn} type="button" onClick={() => setActiveTab("crm")}>
                 ← Wróć do CRM
               </button>
 
@@ -886,12 +886,20 @@ export default function Page() {
               </button>
 
               <button
-                type="button"
-                style={{ ...styles.btn, fontWeight: activeTab === "calc" ? 800 : 600 }}
-                onClick={() => setActiveTab("calc")}
-              >
-                Kalkulator
-              </button>
+  type="button"
+  style={{ ...styles.btn, fontWeight: activeTab === "crm" ? 800 : 600 }}
+  onClick={() => setActiveTab("crm")}
+>
+  CRM
+</button>
+
+<button
+  type="button"
+  style={{ ...styles.btn, fontWeight: activeTab === "calc" ? 800 : 600 }}
+  onClick={() => setActiveTab("calc")}
+>
+  Kalkulator
+</button>
             </div>
 
             <button style={styles.btn} onClick={reload} disabled={loading || saving} type="button">
