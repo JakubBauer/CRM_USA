@@ -400,7 +400,8 @@ function Login({ onLogin }: { onLogin: (u: User) => void }) {
 }
 
 export default function Page() {
-  const [activeTab, setActiveTab] = useState<"crm" | "calc">("crm");
+  type Tab = "crm" | "calc";
+const [activeTab, setActiveTab] = useState<Tab>("crm");
   const [user, setUser] = useState<User | null>(null);
 
   const [leads, setLeads] = useState<Lead[]>([]);
