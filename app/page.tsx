@@ -880,7 +880,7 @@ export default function Page() {
               <button
                 type="button"
                 style={{ ...styles.btn, fontWeight: activeTab === "crm" ? 800 : 600 }}
-                onClick={() => setactiveTab("crm")}
+                onClick={() => setActiveTab("crm")}
               >
                 CRM
               </button>
@@ -888,7 +888,7 @@ export default function Page() {
               <button
                 type="button"
                 style={{ ...styles.btn, fontWeight: activeTab === "calc" ? 800 : 600 }}
-                onClick={() => setactiveTab("calc")}
+                onClick={() => setActiveTab("calc")}
               >
                 Kalkulator
               </button>
